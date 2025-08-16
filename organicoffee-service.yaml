@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: organicoffee-service
+  namespace: organicoffee
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: organicoffee-service
+  template:
+    metadata:
+      labels:
+        app: organicoffee-service
+    spec:
+      containers:
+        - name: app
+          image: ponwick/organicoffee-service:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8089
+          env:
+            # agrega tus variables si las necesitas (DB, etc.)
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0"
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8089 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8089 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: organicoffee-service
+  namespace: organicoffee
+spec:
+  type: ClusterIP
+  selector:
+    app: organicoffee-service
+  ports:
+    - name: http
+      port: 8089
+      targetPort: 8089
